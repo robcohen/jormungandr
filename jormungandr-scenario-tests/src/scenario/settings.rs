@@ -17,6 +17,7 @@ use jormungandr_lib::{
 };
 use rand_core::{CryptoRng, RngCore};
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::{collections::HashMap, io::Write, net::SocketAddr};
 
 #[derive(Debug)]
@@ -47,6 +48,9 @@ pub struct NodeSetting {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct NodeConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub storage: Option<PathBuf>,
+
     pub rest: Rest,
 
     pub p2p: P2pConfig,
@@ -417,6 +421,7 @@ impl NodeConfig {
         NodeConfig {
             rest: Rest::prepare(context),
             p2p: P2pConfig::prepare(context),
+            storage: None,
         }
     }
 }

@@ -1,8 +1,13 @@
 #[macro_use]
 extern crate jormungandr_scenario_tests;
 
-use jormungandr_scenario_tests::{prepare_command, style, Context, Seed};
-use std::{path::PathBuf, thread, time::Duration};
+use jormungandr_scenario_tests::{
+    node::{LeadershipMode, PersistenceMode},
+    prepare_command, style,
+    test::{comm::*, network::topology::scenarios::*},
+    Context, Seed,
+};
+use std::{collections::HashMap, path::PathBuf, thread, time::Duration};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -117,15 +122,19 @@ pub fn scenario_1(mut context: Context<ChaChaRng>) {
 
     let mut controller = scenario_settings.build(context).unwrap();
 
-    let node1 = controller.spawn_node("node1", true).unwrap();
-    let node2 = controller.spawn_node("node2", false).unwrap();
+    let node1 = controller
+        .spawn_node("node1", LeadershipMode::Leader, PersistenceMode::InMemory)
+        .unwrap();
+    let node2 = controller
+        .spawn_node("node2", LeadershipMode::Passive, PersistenceMode::InMemory)
+        .unwrap();
 
     controller.monitor_nodes();
     std::thread::sleep(std::time::Duration::from_secs(10));
-    let tip1 = node1.get_tip().unwrap();
+    let tip1 = node1.tip().unwrap();
     std::thread::sleep(std::time::Duration::from_secs(1));
     node1.shutdown().unwrap();
-    let _block = node2.get_block(&tip1).unwrap();
+    let _block = node2.block(&tip1).unwrap();
 
     std::thread::sleep(std::time::Duration::from_secs(1));
 
@@ -161,11 +170,31 @@ pub fn scenario_2(mut context: Context<ChaChaRng>) {
 
     let mut controller = scenario_settings.build(context).unwrap();
 
-    let leader1 = controller.spawn_node("Leader1", true).unwrap();
+    let leader1 = controller
+        .spawn_node("Leader1", LeadershipMode::Leader, PersistenceMode::InMemory)
+        .unwrap();
     thread::sleep(Duration::from_secs(1));
-    let passive1 = controller.spawn_node("Passive1", false).unwrap();
-    let _passive2 = controller.spawn_node("Passive2", false).unwrap();
-    let _passive3 = controller.spawn_node("Passive3", false).unwrap();
+    let passive1 = controller
+        .spawn_node(
+            "Passive1",
+            LeadershipMode::Passive,
+            PersistenceMode::InMemory,
+        )
+        .unwrap();
+    let _passive2 = controller
+        .spawn_node(
+            "Passive2",
+            LeadershipMode::Passive,
+            PersistenceMode::InMemory,
+        )
+        .unwrap();
+    let _passive3 = controller
+        .spawn_node(
+            "Passive3",
+            LeadershipMode::Passive,
+            PersistenceMode::InMemory,
+        )
+        .unwrap();
 
     controller.monitor_nodes();
 
