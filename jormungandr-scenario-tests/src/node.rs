@@ -6,7 +6,7 @@ use chain_impl_mockchain::{
     header::HeaderId,
 };
 use indicatif::ProgressBar;
-use jormungandr_lib::interfaces::{FragmentLog, FragmentStatus};
+use jormungandr_lib::interfaces::{FragmentLog, FragmentStatus, Stats};
 use rand_core::RngCore;
 use std::{
     collections::HashMap,
@@ -33,8 +33,8 @@ error_chain! {
             description("Cannot spawn the node"),
         }
 
-        InvalidHeaderHash {
-            description("Invalid header hash"),
+        InvalidHeaderId {
+            description("Invalid header id"),
         }
 
         InvalidBlock {
@@ -42,6 +42,9 @@ error_chain! {
         }
         InvalidFragmentLogs {
             description("Fragment logs in an invalid format")
+        }
+        InvalidNodeStats {
+            description("Node stats in an invalid format")
         }
 
         NodeStopped (status: Status) {
@@ -263,6 +266,15 @@ impl NodeController {
             }
             std::thread::sleep(duration);
         }
+    }
+
+    pub fn stats(&self) -> Result<Stats> {
+        let stats = self.get("node/stats")?.text()?;
+        let stats: Stats =
+            serde_json::from_str(&stats).chain_err(|| ErrorKind::InvalidNodeStats)?;
+        self.progress_bar
+            .log_info(format!("node stats ({:?})", stats));
+        Ok(stats)
     }
 
     pub fn shutdown(&self) -> Result<bool> {
