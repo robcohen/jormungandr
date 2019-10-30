@@ -102,11 +102,11 @@ custom_error! { pub Error
     AccountAddressSingle = "invalid input account, this is a UTxO address",
     AccountAddressGroup = "invalid input account, this is a UTxO address with delegation",
     AccountAddressMultisig = "invalid input account, this is a multisig account address",
-    AddingWitnessToFinalizedTxFailed { source: chain::txbuilder::BuildError, filler: CustomErrorFiller }
+    AddingWitnessToFinalizedTxFailed { filler: CustomErrorFiller }
         = "could not add witness to finalized transaction",
-    GeneratedTxBuildingFailed { source: chain::txbuilder::BuildError, filler: CustomErrorFiller }
+    GeneratedTxBuildingFailed { filler: CustomErrorFiller }
         = "generated transaction building failed",
-    TxFinalizationFailed { source: chain::txbuilder::Error }
+    TxFinalizationFailed { source: chain::transaction::Error }
         = "transaction finalization failed",
     GeneratedTxTypeUnexpected = "unexpected generated transaction type",
     MessageSerializationFailed { source: std::io::Error, filler: CustomErrorFiller }
@@ -147,13 +147,13 @@ impl Transaction {
 }
 
 fn display_id(common: common::CommonTransaction) -> Result<(), Error> {
-    let id = common.load()?.id();
+    let id = common.load()?.transaction_sign_data_hash();
     println!("{}", id);
     Ok(())
 }
 
 fn display_message(common: common::CommonTransaction) -> Result<(), Error> {
-    let message = common.load()?.message()?;
+    let message = common.load()?.fragment()?;
     let bytes: Vec<u8> =
         message
             .serialize_as_vec()
