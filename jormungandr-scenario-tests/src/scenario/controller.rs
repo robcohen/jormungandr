@@ -156,7 +156,7 @@ impl Controller {
         leadership_mode: LeadershipMode,
         persistence_mode: PersistenceMode,
     ) -> Result<NodeController> {
-        let mut node_setting = if let Some(node_setting) = self.settings.nodes.get(node_alias) {
+        let node_setting = if let Some(node_setting) = self.settings.nodes.get(node_alias) {
             node_setting
         } else {
             bail!(ErrorKind::NodeNotFound(node_alias.to_owned()))
