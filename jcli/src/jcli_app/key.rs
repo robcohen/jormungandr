@@ -42,6 +42,8 @@ pub enum Key {
     /// get the public key out of a given private key
     ToPublic(ToPublic),
     /// retrive a private key from the given bytes
+    FromExtended(FromExtended),
+    /// retrive a private key from the given bytes
     FromBytes(FromBytes),
     /// get the bytes out of a private key
     ToBytes(ToBytes),
@@ -104,6 +106,19 @@ pub struct ToPublic {
     /// if no value passed, the private key will be read from the
     /// standard input
     #[structopt(long = "input")]
+    input_key: Option<PathBuf>,
+
+    #[structopt(flatten)]
+    output_file: OutputFile,
+}
+
+#[derive(StructOpt, Debug)]
+pub struct FromExtended {
+    /// the xprv or pub to extract the extended key from
+    ///
+    /// if no value passed, the private key will be read from the
+    /// standard input
+    #[structopt(long = "from-extended")]
     input_key: Option<PathBuf>,
 
     #[structopt(flatten)]
@@ -174,6 +189,7 @@ impl Key {
         match self {
             Key::Generate(args) => args.exec(),
             Key::ToPublic(args) => args.exec(),
+            Key::FromExtended(args) => args.exec(),
             Key::ToBytes(args) => args.exec(),
             Key::FromBytes(args) => args.exec(),
             Key::Sign(args) => args.exec(),
@@ -198,6 +214,26 @@ impl Generate {
 }
 
 impl ToPublic {
+    fn exec(self) -> Result<(), Error> {
+        let bech32 = read_bech32(&self.input_key)?;
+        let data = bech32.data();
+        let pub_key_bech32 = match bech32.hrp() {
+            Ed25519::SECRET_BECH32_HRP => gen_pub_key::<Ed25519>(data),
+            Ed25519Bip32::SECRET_BECH32_HRP => gen_pub_key::<Ed25519Bip32>(data),
+            Ed25519Extended::SECRET_BECH32_HRP => gen_pub_key::<Ed25519Extended>(data),
+            SumEd25519_12::SECRET_BECH32_HRP => gen_pub_key::<SumEd25519_12>(data),
+            Curve25519_2HashDH::SECRET_BECH32_HRP => gen_pub_key::<Curve25519_2HashDH>(data),
+            other => Err(Error::UnknownBech32PrivKeyHrp {
+                hrp: other.to_string(),
+            }),
+        }?;
+        let mut output = self.output_file.open()?;
+        writeln!(output, "{}", pub_key_bech32)?;
+        Ok(())
+    }
+}
+
+impl FromExtended {
     fn exec(self) -> Result<(), Error> {
         let bech32 = read_bech32(&self.input_key)?;
         let data = bech32.data();
