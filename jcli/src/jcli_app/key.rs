@@ -43,7 +43,7 @@ pub enum Key {
     ToPublic(ToPublic),
     /// retrive a private key from the given bytes
     FromExtended(FromExtended),
-    /// retrive a private key from the given bytes
+    /// retrive an ed25519 extended key from xprv or xpub
     FromBytes(FromBytes),
     /// get the bytes out of a private key
     ToBytes(ToBytes),
@@ -235,14 +235,16 @@ impl ToPublic {
 
 impl FromExtended {
     fn exec(self) -> Result<(), Error> {
+        // ed25519 - 
+        // ed25519bip32 - 
+        // ed25519e - 
+        // input: xprv or xpub (bip32)
+        // output: ed25519 extended key
         let bech32 = read_bech32(&self.input_key)?;
         let data = bech32.data();
         let pub_key_bech32 = match bech32.hrp() {
-            Ed25519::SECRET_BECH32_HRP => gen_pub_key::<Ed25519>(data),
-            Ed25519Bip32::SECRET_BECH32_HRP => gen_pub_key::<Ed25519Bip32>(data),
-            Ed25519Extended::SECRET_BECH32_HRP => gen_pub_key::<Ed25519Extended>(data),
-            SumEd25519_12::SECRET_BECH32_HRP => gen_pub_key::<SumEd25519_12>(data),
-            Curve25519_2HashDH::SECRET_BECH32_HRP => gen_pub_key::<Curve25519_2HashDH>(data),
+            Ed25519Bip32::PUBLIC_BECH32_HRP => Ok("Public"),
+            Ed25519Bip32::SECRET_BECH32_HRP => Ok("Priv"),
             other => Err(Error::UnknownBech32PrivKeyHrp {
                 hrp: other.to_string(),
             }),
